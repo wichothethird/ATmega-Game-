@@ -65,11 +65,15 @@ void LcdDataWrite(unsigned char cm){
 	_delay_ms(1);
 }
 
+int flag = 0; 
+int state = 0;
+
 int main (void){
 
 
-	DDRC |= 0x3f;
-	DDRC |= ((1<<4)|(1<<5));
+	//This is to initialize the LCD
+	DDRC |= 0x0f; //sets 1's to the pins PC0,PC1,PC2,PC3
+	DDRC |= ((1<<4)|(1<<5)); //sets 1's to PC4 or PC5
 	LcdCommandWrite_UpperNibble(0x30);
 	_delay_ms(4.1);
 	LcdCommandWrite_UpperNibble(0x30);
@@ -78,20 +82,46 @@ int main (void){
 	LcdCommandWrite_UpperNibble(0x20);
 	LcdCmdWrite(0x28);
 	LcdCmdWrite(0x08);
-	LcdCmdWrite(0x01);
+	LcdCmdWrite(0x01);//Clears the display 
 	LcdCmdWrite(0x06);
 	LcdCmdWrite(0x0f);
 	_delay_ms(120);
-	LcdDataWrite(0x41);
-
-
-
 	
-	while(1){
+	//We want to set reg
+	DDRD = 0x00;
+	PORTD = 0xff;
+	
+	
+	EIMSK |= (1<<INT1);//external interrupt mask register 
+	//when this external interrupt shifts a bit to INT1, this means the external pin interrupt is unable.
+	EICRA |= (1<<ISC11);
+	//interrupt sense control is set to 11 which == to rising edge 
+	//raising edge means to go from 0 to 1
+	//in our case the interrupt will work whenever the button is pressed
+	
 
+	while(1){
+		if (flag == 0){
+			//ENABLE GLOBAL INTERUPTS
+			sei();
+			
+		}
+		if (flag == 1){
+			flag = 0;
+			cli();
+			_delay_ms(1000);			
+		}
 	}
 }
 
 
+ISR(INT1_vect)
+{
 
+	if (state == 0)
+		LcdDataWrite('0');
+		flag = 0;
+
+
+}
 
